@@ -20,6 +20,7 @@
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="40dp"
         android:hint="@string/first_name"
+        android:inputType="textPersonName"
         android:textColorHint="@color/black"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -31,6 +32,7 @@
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="10dp"
         android:hint="@string/last_name"
+        android:inputType="textPersonName"
         android:textColorHint="@color/black"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/firstName" />
@@ -42,6 +44,7 @@
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="10dp"
         android:hint="@string/age"
+        android:inputType="number"
         android:textColorHint="@color/black"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/lastName" />
@@ -54,6 +57,7 @@
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="10dp"
         android:hint="@string/email"
+        android:inputType="textEmailAddress"
         android:textColorHint="@color/black"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/age" />

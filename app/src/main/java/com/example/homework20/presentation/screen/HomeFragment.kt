@@ -8,6 +8,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.homework20.databinding.FragmentHomeBinding
 import com.example.homework20.presentation.base.BaseFragment
 import com.example.homework20.presentation.event.UsersEvents
+import com.example.homework20.presentation.extension.showSnackBar
 import com.example.homework20.presentation.model.Users
 import com.example.homework20.presentation.state.UsersState
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,46 +22,61 @@ class HomeFragment @Inject constructor() :
     private val viewModel: HomeFragmentViewModel by viewModels()
 
     override fun bind() {
+        viewModel.onEvent(UsersEvents.CountUsers)
     }
 
     override fun bindViewActionListeners() {
         binding.apply {
             addBtn.setOnClickListener {
-                viewModel.onEvent(
-                    UsersEvents.InsertUser(
-                        Users(
-                            binding.firstName.text.toString(),
-                            binding.lastName.text.toString(),
-                            binding.email.text.toString(),
-                            binding.age.text.toString().toInt()
+                val email = binding.email.text.toString()
+                val firstName = binding.firstName.text.toString()
+                val lastName = binding.lastName.text.toString()
+                val ageString = binding.age.text.toString()
+                val age = ageString.toIntOrNull()
+                if (age != null) {
+                    viewModel.onEvent(
+                        UsersEvents.InsertUser(
+                            Users(email, firstName, lastName, age)
                         )
                     )
-                )
+                } else {
+                    binding.root.showSnackBar("Please enter a valid age.")
+                }
             }
 
             removeBtn.setOnClickListener {
-                viewModel.onEvent(
-                    UsersEvents.RemoveUser(
-                        Users(
-                            binding.firstName.text.toString(),
-                            binding.lastName.text.toString(),
-                            binding.email.text.toString(),
-                            binding.age.text.toString().toInt()
+                val email = binding.email.text.toString()
+                val firstName = binding.firstName.text.toString()
+                val lastName = binding.lastName.text.toString()
+                val ageString = binding.age.text.toString()
+                val age = ageString.toIntOrNull()
+
+                if (age != null) {
+                    viewModel.onEvent(
+                        UsersEvents.RemoveUser(
+                            Users(email, firstName, lastName, age)
                         )
                     )
-                )
+                } else {
+                    binding.root.showSnackBar("Please enter a valid age.")
+                }
             }
             updateBtn.setOnClickListener {
-                viewModel.onEvent(
-                    UsersEvents.UpdateUser(
-                        Users(
-                            binding.firstName.text.toString(),
-                            binding.lastName.text.toString(),
-                            binding.email.text.toString(),
-                            binding.age.text.toString().toInt()
+                val email = binding.email.text.toString()
+                val firstName = binding.firstName.text.toString()
+                val lastName = binding.lastName.text.toString()
+                val ageString = binding.age.text.toString()
+                val age = ageString.toIntOrNull()
+
+                if (age != null) {
+                    viewModel.onEvent(
+                        UsersEvents.UpdateUser(
+                            Users(email, firstName, lastName, age)
                         )
                     )
-                )
+                } else {
+                    binding.root.showSnackBar("Please enter a valid age.")
+                }
             }
         }
     }
@@ -70,6 +86,24 @@ class HomeFragment @Inject constructor() :
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.userState.collect { state ->
                     updateUI(state)
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiEvent.collect { event ->
+                    when (event) {
+                        is HomeFragmentViewModel.UsersUiEvent.ShowStatusMessage -> {
+                            val message = if (event.isSuccess) "Success" else "Error"
+                            binding.status.text = message
+                            val color = if (event.isSuccess) android.R.color.holo_green_dark else android.R.color.holo_red_dark
+                            binding.status.setTextColor(resources.getColor(color, null))
+                        }
+                        is HomeFragmentViewModel.UsersUiEvent.ShowErrorMessage -> {
+                            binding.root.showSnackBar(event.message)
+                        }
+                    }
                 }
             }
         }

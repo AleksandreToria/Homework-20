@@ -24,4 +24,8 @@ class UsersRepositoryImpl @Inject constructor(
     override suspend fun countUsers(): Int {
         return usersDao.countUsers()
     }
+
+    override suspend fun checkUser(email: String): Int {
+        return usersDao.checkUser(email)
+    }
 }

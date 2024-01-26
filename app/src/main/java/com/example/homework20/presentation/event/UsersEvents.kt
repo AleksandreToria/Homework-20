@@ -7,4 +7,5 @@ sealed class UsersEvents {
     data class RemoveUser(val users: Users) : UsersEvents()
     data class UpdateUser(val users: Users) : UsersEvents()
     data object CountUsers : UsersEvents()
+    data class ValidateForm(val users: Users) : UsersEvents()
 }

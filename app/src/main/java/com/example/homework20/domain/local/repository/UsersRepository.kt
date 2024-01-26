@@ -7,4 +7,5 @@ interface UsersRepository {
     suspend fun removeUser(getUsers: GetUsers)
     suspend fun updateUser(getUsers: GetUsers)
     suspend fun countUsers(): Int
+    suspend fun checkUser(email: String): Int
 }

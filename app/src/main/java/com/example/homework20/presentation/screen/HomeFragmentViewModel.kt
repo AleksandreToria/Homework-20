@@ -2,7 +2,8 @@ package com.example.homework20.presentation.screen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.homework20.domain.local.usecase.UsersUseCase
+import com.example.homework20.domain.local.usecase.database.UsersUseCase
+import com.example.homework20.domain.local.usecase.validator.EmailValidatorUseCase
 import com.example.homework20.presentation.event.UsersEvents
 import com.example.homework20.presentation.mapper.toDomain
 import com.example.homework20.presentation.model.Users
@@ -19,7 +20,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeFragmentViewModel @Inject constructor(
-    private val usersUseCase: UsersUseCase
+    private val usersUseCase: UsersUseCase,
+    private val emailValidatorUseCase: EmailValidatorUseCase
 ) : ViewModel() {
 
     private val _userState = MutableStateFlow(UsersState())
@@ -34,40 +36,100 @@ class HomeFragmentViewModel @Inject constructor(
             is UsersEvents.RemoveUser -> removeUser(event.users)
             is UsersEvents.UpdateUser -> updateUser(event.users)
             UsersEvents.CountUsers -> updateUsersCount()
+            is UsersEvents.ValidateForm -> validateForm(event.users)
         }
     }
 
     private fun insertItem(users: Users) {
         viewModelScope.launch {
-            usersUseCase.insertUserUseCase(users.toDomain())
-
-            updateUsersCount()
-
-            _userState.update { currentState ->
-                currentState.copy(insertUser = users)
+            if (!validateForm(users)) {
+                return@launch
+            }
+            val userCount = usersUseCase.checkUserUseCase(users.email)
+            if (userCount == 0) {
+                usersUseCase.insertUserUseCase(users.toDomain())
+                _uiEvent.emit(UsersUiEvent.ShowErrorMessage("User added successfully"))
+                _uiEvent.emit(UsersUiEvent.ShowStatusMessage(isSuccess = true))
+                updateUsersCount()
+            } else {
+                _uiEvent.emit(UsersUiEvent.ShowErrorMessage("User already exists"))
+                _uiEvent.emit(UsersUiEvent.ShowStatusMessage(isSuccess = false))
             }
         }
     }
 
+
     private fun removeUser(users: Users) {
         viewModelScope.launch {
-            usersUseCase.removeUserUseCase(users.toDomain())
-
-            updateUsersCount()
-
-            _userState.update { currentState ->
-                currentState.copy(removeUser = users)
+            if (!validateForm(users)) {
+                return@launch
+            }
+            val userCount = usersUseCase.checkUserUseCase(users.email)
+            if (userCount > 0) {
+                usersUseCase.removeUserUseCase(users.toDomain())
+                _uiEvent.emit(UsersUiEvent.ShowErrorMessage("User deleted successfully"))
+                _uiEvent.emit(UsersUiEvent.ShowStatusMessage(isSuccess = true))
+                updateUsersCount()
+                _userState.update { currentState ->
+                    currentState.copy(removeUser = users)
+                }
+            } else {
+                _uiEvent.emit(UsersUiEvent.ShowErrorMessage("User does not exist"))
+                _uiEvent.emit(UsersUiEvent.ShowStatusMessage(isSuccess = false))
             }
         }
     }
 
     private fun updateUser(users: Users) {
         viewModelScope.launch {
-            usersUseCase.updateUserUseCase(users.toDomain())
-
-            _userState.update { currentState ->
-                currentState.copy(updateUser = users)
+            if (!validateForm(users)) {
+                return@launch
             }
+            val userCount = usersUseCase.checkUserUseCase(users.email)
+            if (userCount > 0) {
+                usersUseCase.updateUserUseCase(users.toDomain())
+                _uiEvent.emit(UsersUiEvent.ShowErrorMessage("User updated successfully"))
+                _uiEvent.emit(UsersUiEvent.ShowStatusMessage(isSuccess = true))
+                _userState.update { currentState ->
+                    currentState.copy(updateUser = users)
+                }
+            } else {
+                _uiEvent.emit(UsersUiEvent.ShowErrorMessage("User does not exist"))
+                _uiEvent.emit(UsersUiEvent.ShowStatusMessage(isSuccess = false))
+            }
+        }
+    }
+
+    private fun validateForm(users: Users): Boolean {
+        val isEmailValid = emailValidatorUseCase(users.email)
+        val isFirstNameValid = users.firstName.isNotBlank()
+        val isLastNameValid = users.lastName.isNotBlank()
+        val isAgeValid = users.age.toString().toIntOrNull() != null && users.age > 0
+
+        val areFieldsValid = isEmailValid && isFirstNameValid && isLastNameValid && isAgeValid
+
+        if (!areFieldsValid) {
+            val errorMessage =
+                buildErrorMessage(isEmailValid, isFirstNameValid, isLastNameValid, isAgeValid)
+            viewModelScope.launch {
+                _uiEvent.emit(UsersUiEvent.ShowErrorMessage(errorMessage))
+            }
+        }
+
+        return areFieldsValid
+    }
+
+    private fun buildErrorMessage(
+        isEmailValid: Boolean,
+        isFirstNameValid: Boolean,
+        isLastNameValid: Boolean,
+        isAgeValid: Boolean
+    ): String {
+        return buildString {
+            if (!isEmailValid) append("Invalid email. ")
+            if (!isFirstNameValid) append("First name cannot be empty. ")
+            if (!isLastNameValid) append("Last name cannot be empty. ")
+            if (!isAgeValid) append("Age must be a number greater than 0.")
         }
     }
 
@@ -80,6 +142,8 @@ class HomeFragmentViewModel @Inject constructor(
     }
 
     sealed interface UsersUiEvent {
-        data object rame : UsersUiEvent
+        data class ShowStatusMessage(val isSuccess: Boolean) : UsersUiEvent
+        data class ShowErrorMessage(val message: String) : UsersUiEvent
     }
+
 }

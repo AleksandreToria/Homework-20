@@ -1,4 +1,4 @@
-package com.example.homework20.domain.local.usecase
+package com.example.homework20.domain.local.usecase.database
 
 import com.example.homework20.domain.local.repository.UsersRepository
 import javax.inject.Inject

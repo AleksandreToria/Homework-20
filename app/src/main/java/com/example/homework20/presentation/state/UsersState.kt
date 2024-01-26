@@ -6,5 +6,7 @@ data class UsersState(
     val insertUser: Users? = null,
     val updateUser: Users? = null,
     val removeUser: Users? = null,
-    val countUsers: Int = 0
+    val countUsers: Int = 0,
+    val checkUser: Boolean = false,
+    val errorMessage: String? = null
 )
